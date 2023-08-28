@@ -8,10 +8,12 @@ def load_device_info(device_name):
 
     # Get the device information
     device_info = pairing_info[device_name]
-    device_ip = device_info.get("ip")
+    device_id = device_info["id"]
+    device_ip = device_info["ip"]
     auth_token = device_info["auth_token"]
+    device_type = device_info["type"]
 
-    return device_ip, auth_token
+    return device_id, device_ip, auth_token, device_type
 
 def update_device_ip(device_name, device_ip):
     # Load pairing information from file
@@ -45,14 +47,14 @@ def handle_error(device_name, vizio):
     update_device_ip(device_name, device_ip)
 
     # Create a new Vizio object for the device with the updated IP address
-    vizio.device_config.ip = device_ip
+    vizio.ip = device_ip
 
 def execute_command(device_name, command, *args):
     # Load the device information
-    device_ip, auth_token = load_device_info(device_name)
+    device_id, device_ip, auth_token, device_type = load_device_info(device_name)
 
     # Create a Vizio object for the device
-    vizio = Vizio("my_device_id", device_ip, device_name, auth_token,"tv")
+    vizio = Vizio(device_id, device_ip, device_name, auth_token,device_type,5)
 
     # Try to execute the command
     success = getattr(vizio, command)(*args)

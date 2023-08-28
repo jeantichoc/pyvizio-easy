@@ -1,20 +1,31 @@
 import json
+import platform
+import random
+
 from pyvizio import Vizio
 
-DEVICE_ID = "my_device_id"
-DEVICE_NAME = "my_device_name"
-DEVICE_TYPE = "tv"  # change to "speaker" if pairing a speaker
+def get_computer_name():
+    # Get the hostname from the environment variable
+    computer_name = platform.node()
+    # Remove the ".local" at the end of the hostname
+    if computer_name.endswith(".local"):
+        computer_name = computer_name[:-6]
+    return computer_name + "-pyvizio"
 
 def main():
     # Discover Vizio devices on the local network
     vizio_devices = Vizio.discovery_zeroconf(5)
-    print(vizio_devices)
+    #print(vizio_devices)
+
+    # Get the local computer name for ids and visibility
+    computer_name=get_computer_name()
 
     # Pair each device and store the pairing information
     pairing_info = {}
-    for device in vizio_devices:
+    for index, device in enumerate(vizio_devices):
         ip = device.ip
-        vizio = Vizio(str(device.id), ip, str(device.name), str(device.model))
+        id = computer_name + "-" + str(index) + "-" + str(random.randint(1000000, 9999999))
+        vizio = Vizio(id, ip, computer_name)
 
         # Start the pairing process
         pair_data = vizio.start_pair()
@@ -22,7 +33,6 @@ def main():
         if pair_data:
             # For TVs, lookup the PIN code on your TV and note challenge token and type in console
             # For speakers, press the physical "Volume Up" button and note challenge token and type in console
-            print(pair_data)
             pin = input(f"Enter the PIN displayed on your {device.name} device: ")
             ch_type = pair_data.ch_type
             token = pair_data.token
@@ -32,8 +42,10 @@ def main():
 
             # Store the pairing information for this device
             pairing_info[str(device.name)] = {
+                "id": str(id), 
                 "auth_token": str(pair_response.auth_token),
-                "ip":device.ip
+                "type":str(vizio.device_type),           
+                "ip":ip
             }
 
     # Save the pairing information to a file
