@@ -120,23 +120,35 @@ def pair():
             pair_response = vizio.pair(ch_type, token, pin)
 
             # Store the pairing information for this device
-            pairing_info[str(device.name)] = {
-                "id": str(id),
-                "auth_token": str(pair_response.auth_token),
-                "type": str(vizio.device_type),
-                "ip": ip
-            }
+            if not hasattr(pair_response, 'auth_token'):
+                print("pairing failed")
+                vizio.stop_pair()
+            else:
+                print("token received")
+                pairing_info[str(device.name)] = {
+                    "id": str(id),
+                    "auth_token": str(pair_response.auth_token),
+                    "type": str(vizio.device_type),
+                    "ip": ip
+                }
 
     # Save the pairing information to a file
+    print("storring paired devices in $paired_devices_json")
     with open(paired_devices_json, "w") as f:
         json.dump(pairing_info, f)
 
 def usage():
-    print('Usage:')
+    print('Setup:')
     print('python3 pvvizio-easy.py pair\t\tPair with all Vizio devices detected')
     print('python3 pvvizio-easy.py help\t\tShow this help message')
     print('')
-    print('python3 pvvizio-easy.py <device_name> <command> [args*] \t\t run the command on the specified device name')
+    print('Usage:')
+    print('python3 pvvizio-easy.py <device_name> <command> [args*] \t run the command on the specified device name')
+    print('')
+    print('Examples:')
+    print('python3 pvvizio-easy.py TV vol_up')
+    print('python3 pvvizio-easy.py TV vol_down')
+    print('python3 pvvizio-easy.py TV set_input hdmi4')
 
 
 if __name__ == "__main__":
