@@ -1,9 +1,17 @@
 import json
+import os
 from pyvizio import Vizio
+
+# Get the path to the directory containing the script
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Construct the path to the pairing information file
+pairing_info_path = os.path.join(script_dir, "pairing_info.json")
+
 
 def load_device_info(device_name):
     # Load pairing information from file
-    with open("pairing_info.json", "r") as f:
+    with open(pairing_info_path, "r") as f:
         pairing_info = json.load(f)
 
     # Get the device information
@@ -17,12 +25,12 @@ def load_device_info(device_name):
 
 def update_device_ip(device_name, device_ip):
     # Load pairing information from file
-    with open("pairing_info.json", "r") as f:
+    with open(pairing_info_path, "r") as f:
         pairing_info = json.load(f)
 
     # Update the pairing information with the new IP address
     pairing_info[device_name]["ip"] = device_ip
-    with open("pairing_info.json", "w") as f:
+    with open(pairing_info_path, "w") as f:
         json.dump(pairing_info, f)
 
 def discover_device_ip(device_name):
