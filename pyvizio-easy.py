@@ -11,7 +11,7 @@ from pyvizio import Vizio
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Construct the path to the pairing information file
-paired_devices_json = os.path.join(script_dir, "paired_devices.json")
+paired_devices_json = os.path.join(script_dir, "pyvizio-easy.json")
 
 def get_computer_name():
     # Get the hostname from the environment variable
@@ -62,34 +62,48 @@ def discover_device_ip(device_name):
 
     return None
 
-def handle_error(device_name, vizio):
+def update_ip_if_necessary(vizio):
+    if vizio_connected(vizio):
+        return
+
+    print(f"No device detected at ip {vizio.ip}")   
+    print(f"Looking for a new ip for {vizio.name}")   
     # Try to discover the new IP address of the device
-    device_ip = discover_device_ip(device_name)
-    if not device_ip:
-        print(f"Could not find a device with the name {device_name}")
+    new_ip = discover_device_ip(vizio.name)
+    if not new_ip:
+        print(f"Could not find a device with the name {vizio.name}")
         exit(1)
 
     # Update the pairing information with the new IP address
-    update_device_ip(device_name, device_ip)
+
+    print(f"Changing ip for {vizio.name} {vizio.ip} to {new_ip}")   
+    update_device_ip(vizio.name, new_ip)
 
     # Create a new Vizio object for the device with the updated IP address
-    vizio.ip = device_ip
+    vizio.ip = new_ip
 
-def execute_command(device_name, command, *args):
+
+def vizio_connected(vizio) -> bool:
+    success = getattr(vizio, "get_power_state")()
+    return success is not None
+
+def get_vizio_device(device_name) -> Vizio:
     # Load the device information
     device_id, device_ip, auth_token, device_type = load_device_info(device_name)
 
     # Create a Vizio object for the device
-    vizio = Vizio(device_id, device_ip, device_name, auth_token,device_type,5)
+    vizio = Vizio(device_id, device_ip, device_name, auth_token,device_type,2)
+
+    update_ip_if_necessary(vizio)
+    return vizio
+
+
+def execute_command(device_name, command, *args):
+    # Get the Vizio object for the device
+    vizio = get_vizio_device(device_name)
 
     # Try to execute the command
     success = getattr(vizio, command)(*args)
-    if not success:
-        handle_error(device_name, vizio)
-        success = getattr(vizio, command)(*args)
-        if not success:
-            print(f"Failed to execute command {command} on {device_name}")
-            exit(1)
     print(success)
 
 def pair():
